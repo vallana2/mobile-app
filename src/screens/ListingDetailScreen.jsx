@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ListingDetailScreen({ route, navigation }) {
   const { id } = route.params;
@@ -110,6 +111,37 @@ export default function ListingDetailScreen({ route, navigation }) {
           onPress={() => navigation.navigate('Reviews', { listingId: id })}>
           <Text style={styles.reviewsBtnText}>💬 See Reviews</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+  style={styles.messageBtn}
+  onPress={async () => {
+    const convId = `${user?.id}_${listing.hostId || listing.host?.id}_${listing.id}`;
+    const conv = {
+      id: convId,
+      otherUserName: listing.host?.name || 'Host',
+      listingTitle: listing.title,
+      listingId: listing.id,
+      lastMessage: '',
+      lastTime: '',
+      unread: 0,
+    };
+    // Save conversation
+    const stored = await AsyncStorage.getItem('conversations');
+    const convs = stored ? JSON.parse(stored) : [];
+    const exists = convs.find(c => c.id === convId);
+    if (!exists) {
+      await AsyncStorage.setItem('conversations', JSON.stringify([conv, ...convs]));
+    }
+    navigation.navigate('Messages', {
+      screen: 'Chat',
+      params: {
+        conversationId: convId,
+        otherUserName: listing.host?.name || 'Host',
+        listingTitle: listing.title,
+      }
+    });
+  }}>
+  <Text style={styles.messageBtnText}>💬 Message Host</Text>
+</TouchableOpacity>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
         {success ? <Text style={styles.success}>{success}</Text> : null}
@@ -176,4 +208,10 @@ const styles = StyleSheet.create({
   totalPrice: { fontSize: 16, fontWeight: '700', color: '#222', marginBottom: 12, marginTop: 8 },
   button: { backgroundColor: '#FF385C', borderRadius: 12, padding: 16, alignItems: 'center' },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  messageBtn: {
+  borderWidth: 1.5, borderColor: '#222',
+  borderRadius: 12, padding: 16,
+  alignItems: 'center', marginBottom: 12
+},
+messageBtnText: { color: '#222', fontSize: 16, fontWeight: '600' },
 });

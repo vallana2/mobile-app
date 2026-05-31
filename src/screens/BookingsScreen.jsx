@@ -3,27 +3,9 @@ import {
   View, Text, FlatList, TouchableOpacity,
   StyleSheet, ActivityIndicator, Alert
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
-
-// Helper to save real notifications
-export const saveNotification = async (notif) => {
-  try {
-    const stored = await AsyncStorage.getItem('notifications');
-    const current = stored ? JSON.parse(stored) : [];
-    const newNotif = {
-      id: Date.now().toString(),
-      ...notif,
-      time: 'Just now',
-      read: false,
-    };
-    const updated = [newNotif, ...current];
-    await AsyncStorage.setItem('notifications', JSON.stringify(updated));
-  } catch (err) {
-    console.log(err);
-  }
-};
+import { saveNotification } from '../utils/notifications';
 
 export default function BookingsScreen({ navigation }) {
   const { user } = useAuth();
@@ -65,15 +47,12 @@ export default function BookingsScreen({ navigation }) {
             try {
               setCancelling(item.id);
               await api.delete(`/bookings/${item.id}`);
-
-              // ✅ Save real notification
               await saveNotification({
                 type: 'BOOKING_CANCELLED',
                 title: 'Booking Cancelled ❌',
                 message: `Your booking at ${item.listing?.title || 'listing'} has been cancelled.`,
                 icon: '❌',
               });
-
               Alert.alert('Cancelled', 'Your booking has been cancelled.');
               fetchBookings();
             } catch (err) {
@@ -111,8 +90,8 @@ export default function BookingsScreen({ navigation }) {
         <Text style={styles.title}>My Trips</Text>
         <TouchableOpacity
           style={styles.notifBtn}
-          onPress={() => navigation.navigate('Notifications')}>
-          <Text style={{ fontSize: 22 }}>🔔</Text>
+          onPress={() => navigation.getParent()?.navigate('Notifications')}>
+          <Text style={{ fontSize: 20 }}>🔔</Text>
         </TouchableOpacity>
       </View>
 
@@ -139,7 +118,6 @@ export default function BookingsScreen({ navigation }) {
           onRefresh={fetchBookings}
           renderItem={({ item }) => (
             <View style={styles.card}>
-              {/* Header */}
               <View style={styles.cardHeader}>
                 <Text style={styles.cardTitle} numberOfLines={1}>
                   {item.listing?.title || 'Listing'}
@@ -151,12 +129,10 @@ export default function BookingsScreen({ navigation }) {
                 </View>
               </View>
 
-              {/* Location */}
               <Text style={styles.cardLocation}>
                 📍 {item.listing?.location || 'Unknown location'}
               </Text>
 
-              {/* Dates */}
               <View style={styles.datesRow}>
                 <View style={styles.dateBox}>
                   <Text style={styles.dateLabel}>Check-in</Text>
@@ -166,7 +142,7 @@ export default function BookingsScreen({ navigation }) {
                     })}
                   </Text>
                 </View>
-                <Text style={styles.dateSeparator}>→</Text>
+                <Text style={styles.dateSeparator}>{'-->'}</Text>
                 <View style={styles.dateBox}>
                   <Text style={styles.dateLabel}>Check-out</Text>
                   <Text style={styles.dateValue}>
@@ -177,7 +153,6 @@ export default function BookingsScreen({ navigation }) {
                 </View>
               </View>
 
-              {/* Footer */}
               <View style={styles.cardFooter}>
                 <Text style={styles.totalPrice}>
                   Total: <Text style={styles.totalPriceBold}>${item.totalPrice}</Text>
@@ -187,7 +162,6 @@ export default function BookingsScreen({ navigation }) {
                 </Text>
               </View>
 
-              {/* Action Buttons */}
               <View style={styles.actionRow}>
                 <TouchableOpacity
                   style={styles.detailBtn}

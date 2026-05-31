@@ -150,11 +150,11 @@ export default function HomeScreen({ navigation }) {
 
         <View style={styles.headerRight}>
           {user && user.role === 'HOST' ? (
-            <TouchableOpacity
-              style={styles.hostBtn}
-              onPress={() => navigation.navigate('CreateListing')}>
-              <Text style={styles.hostBtnText}>+ List</Text>
-            </TouchableOpacity>
+           <TouchableOpacity
+  style={styles.hostBtn}
+  onPress={() => navigation.navigate('CreateListing')}>
+  <Text style={styles.hostBtnText}>+ List</Text>
+</TouchableOpacity>
           ) : null}
           <TouchableOpacity
             style={styles.avatar}

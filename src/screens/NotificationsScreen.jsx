@@ -5,24 +5,6 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// ✅ Helper function - used by other screens to save notifications
-export const saveNotification = async (notif) => {
-  try {
-    const stored = await AsyncStorage.getItem('notifications');
-    const current = stored ? JSON.parse(stored) : [];
-    const newNotif = {
-      id: Date.now().toString(),
-      ...notif,
-      time: 'Just now',
-      read: false,
-    };
-    const updated = [newNotif, ...current];
-    await AsyncStorage.setItem('notifications', JSON.stringify(updated));
-  } catch (err) {
-    console.log(err);
-  }
-};
-
 export default function NotificationsScreen({ navigation }) {
   const [notifications, setNotifications] = useState([]);
 
@@ -88,15 +70,10 @@ export default function NotificationsScreen({ navigation }) {
       onPress={() => markAsRead(item.id)}
       activeOpacity={0.8}>
 
-      {/* Icon */}
-      <View style={[
-        styles.iconBox,
-        !item.read && styles.iconBoxUnread
-      ]}>
+      <View style={[styles.iconBox, !item.read && styles.iconBoxUnread]}>
         <Text style={styles.iconText}>{item.icon}</Text>
       </View>
 
-      {/* Content */}
       <View style={styles.notifContent}>
         <View style={styles.notifRow}>
           <Text style={[
@@ -113,7 +90,6 @@ export default function NotificationsScreen({ navigation }) {
         <Text style={styles.notifTime}>{item.time}</Text>
       </View>
 
-      {/* Delete Button */}
       <TouchableOpacity
         style={styles.deleteBtn}
         onPress={() => deleteNotification(item.id)}>
@@ -124,8 +100,6 @@ export default function NotificationsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -149,25 +123,23 @@ export default function NotificationsScreen({ navigation }) {
         )}
       </View>
 
-      {/* Clear All Button */}
       {notifications.length > 0 && (
         <TouchableOpacity style={styles.clearAllBtn} onPress={clearAll}>
-          <Text style={styles.clearAllText}>🗑️ Clear all notifications</Text>
+          <Text style={styles.clearAllText}>🗑️ Clear all</Text>
         </TouchableOpacity>
       )}
 
-      {/* Empty State */}
       {notifications.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyIcon}>🔔</Text>
           <Text style={styles.emptyTitle}>No notifications yet</Text>
           <Text style={styles.emptySub}>
-            We'll notify you when you have a new booking, message, or update!
+            Book a listing or cancel a booking to see notifications here!
           </Text>
           <TouchableOpacity
             style={styles.exploreBtn}
-            onPress={() => navigation.navigate('Home')}>
-            <Text style={styles.exploreBtnText}>Explore listings</Text>
+            onPress={() => navigation.goBack()}>
+            <Text style={styles.exploreBtnText}>Go Back</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -194,31 +166,28 @@ const styles = StyleSheet.create({
   },
   backBtn: { padding: 4, width: 40 },
   backText: { fontSize: 24, color: '#FF385C' },
-  headerCenter: {
-    flexDirection: 'row', alignItems: 'center', gap: 8
-  },
+  headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#222' },
   headerBadge: {
     backgroundColor: '#FF385C', borderRadius: 10,
     paddingHorizontal: 7, paddingVertical: 2
   },
   headerBadgeText: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  markAllText: { fontSize: 13, color: '#FF385C', fontWeight: '600', width: 80, textAlign: 'right' },
-
+  markAllText: {
+    fontSize: 13, color: '#FF385C',
+    fontWeight: '600', width: 80, textAlign: 'right'
+  },
   clearAllBtn: {
     paddingHorizontal: 20, paddingVertical: 10,
     borderBottomWidth: 1, borderBottomColor: '#f5f5f5',
     alignItems: 'flex-end'
   },
   clearAllText: { fontSize: 13, color: '#aaa' },
-
   notifCard: {
     flexDirection: 'row', alignItems: 'flex-start',
     paddingHorizontal: 16, paddingVertical: 14, gap: 12
   },
-  notifCardUnread: {
-    borderLeftWidth: 3, borderLeftColor: '#FF385C'
-  },
+  notifCardUnread: { borderLeftWidth: 3, borderLeftColor: '#FF385C' },
   iconBox: {
     width: 46, height: 46, borderRadius: 23,
     backgroundColor: '#f5f5f5',
@@ -226,32 +195,22 @@ const styles = StyleSheet.create({
   },
   iconBoxUnread: { backgroundColor: '#fff0f2' },
   iconText: { fontSize: 22 },
-
   notifContent: { flex: 1 },
   notifRow: {
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between', marginBottom: 4
   },
-  notifTitle: {
-    fontSize: 14, fontWeight: '600',
-    color: '#666', flex: 1
-  },
+  notifTitle: { fontSize: 14, fontWeight: '600', color: '#666', flex: 1 },
   notifTitleUnread: { color: '#222', fontWeight: '700' },
   unreadDot: {
     width: 8, height: 8, borderRadius: 4,
     backgroundColor: '#FF385C', marginLeft: 6
   },
-  notifMessage: {
-    fontSize: 13, color: '#666',
-    lineHeight: 18, marginBottom: 4
-  },
+  notifMessage: { fontSize: 13, color: '#666', lineHeight: 18, marginBottom: 4 },
   notifTime: { fontSize: 11, color: '#aaa' },
-
   deleteBtn: { padding: 4 },
   deleteBtnText: { fontSize: 16, color: '#ccc' },
-
   separator: { height: 1, backgroundColor: '#f5f5f5' },
-
   empty: {
     flex: 1, justifyContent: 'center',
     alignItems: 'center', padding: 40
@@ -263,8 +222,7 @@ const styles = StyleSheet.create({
   },
   emptySub: {
     fontSize: 14, color: '#888',
-    textAlign: 'center', lineHeight: 22,
-    marginBottom: 24
+    textAlign: 'center', lineHeight: 22, marginBottom: 24
   },
   exploreBtn: {
     backgroundColor: '#FF385C', borderRadius: 12,

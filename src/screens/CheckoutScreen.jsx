@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
+import { saveNotification } from '../utils/notifications';
 
 const FALLBACKS = {
   APARTMENT: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80',
@@ -45,11 +46,23 @@ export default function CheckoutScreen({ route, navigation }) {
           onPress: async () => {
             try {
               setLoading(true);
+
+              // ✅ Create booking in database
               await api.post('/bookings', {
                 listingId: listing.id,
                 checkIn,
                 checkOut,
               });
+
+              // ✅ Save notification
+              await saveNotification({
+                type: 'BOOKING_CONFIRMED',
+                title: 'Booking Confirmed! 🎉',
+                message: `Your booking at ${listing.title} is confirmed!\nCheck-in: ${formatDate(checkIn)}\nCheck-out: ${formatDate(checkOut)}\nTotal: $${total}`,
+                icon: '✅',
+              });
+
+              // ✅ Show success alert
               Alert.alert(
                 '🎉 Booking Confirmed!',
                 `Your booking at ${listing.title} is confirmed!\n\nCheck-in: ${formatDate(checkIn)}\nCheck-out: ${formatDate(checkOut)}\nTotal: $${total}`,
@@ -112,7 +125,9 @@ export default function CheckoutScreen({ route, navigation }) {
             </View>
           </View>
           <View style={styles.tripNights}>
-            <Text style={styles.tripNightsText}>🌙 {nights} night{nights !== 1 ? 's' : ''}</Text>
+            <Text style={styles.tripNightsText}>
+              🌙 {nights} night{nights !== 1 ? 's' : ''}
+            </Text>
           </View>
         </View>
 
@@ -158,7 +173,7 @@ export default function CheckoutScreen({ route, navigation }) {
           <View style={styles.guestRow}>
             <View style={styles.guestAvatar}>
               <Text style={styles.guestAvatarText}>
-                {user?.name?.charAt(0).toUpperCase() || '👤'}
+                {user?.name?.charAt(0).toUpperCase() || '?'}
               </Text>
             </View>
             <View>
@@ -220,7 +235,6 @@ const styles = StyleSheet.create({
   backBtn: { padding: 4, width: 40 },
   backText: { fontSize: 24, color: '#FF385C' },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#222' },
-
   listingCard: {
     flexDirection: 'row', padding: 20, gap: 14, alignItems: 'center'
   },
@@ -230,12 +244,9 @@ const styles = StyleSheet.create({
   listingTitle: { fontSize: 15, fontWeight: '700', color: '#222', marginBottom: 4 },
   listingLocation: { fontSize: 13, color: '#666', marginBottom: 2 },
   listingRating: { fontSize: 13, color: '#222' },
-
   divider: { height: 1, backgroundColor: '#f0f0f0', marginHorizontal: 20 },
-
   section: { padding: 20 },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: '#222', marginBottom: 16 },
-
   tripRow: {
     flexDirection: 'row', backgroundColor: '#f9f9f9',
     borderRadius: 14, overflow: 'hidden',
@@ -250,7 +261,6 @@ const styles = StyleSheet.create({
     borderRadius: 10, padding: 10, alignItems: 'center'
   },
   tripNightsText: { fontSize: 14, color: '#FF385C', fontWeight: '600' },
-
   priceRow: {
     flexDirection: 'row', justifyContent: 'space-between',
     alignItems: 'center', paddingVertical: 10,
@@ -264,7 +274,6 @@ const styles = StyleSheet.create({
   },
   totalLabel: { fontSize: 16, fontWeight: '700', color: '#222' },
   totalValue: { fontSize: 18, fontWeight: '700', color: '#222' },
-
   guestRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   guestAvatar: {
     width: 48, height: 48, borderRadius: 24,
@@ -273,10 +282,8 @@ const styles = StyleSheet.create({
   guestAvatarText: { color: '#fff', fontWeight: '700', fontSize: 20 },
   guestName: { fontSize: 15, fontWeight: '700', color: '#222' },
   guestEmail: { fontSize: 13, color: '#888', marginTop: 2 },
-
   policyText: { fontSize: 14, color: '#444', lineHeight: 22 },
   ruleText: { fontSize: 14, color: '#444', lineHeight: 26 },
-
   footer: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     backgroundColor: '#fff', borderTopWidth: 1,

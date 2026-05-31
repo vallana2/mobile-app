@@ -19,6 +19,8 @@ import MessagingScreen from '../screens/MessagingScreen';
 import ChatScreen from '../screens/ChatScreen';
 import SearchScreen from '../screens/SearchScreen';
 import CheckoutScreen from '../screens/CheckoutScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
+
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -115,6 +117,7 @@ export default function AppNavigator() {
       <Stack.Screen name="Chat" component={ChatScreen} />
       <Stack.Screen name="Search" component={SearchScreen} />
       <Stack.Screen name="Checkout" component={CheckoutScreen} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} />
     </Stack.Navigator>
   );
 }
