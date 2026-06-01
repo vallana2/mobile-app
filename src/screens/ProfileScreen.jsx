@@ -263,7 +263,13 @@ export default function ProfileScreen({ navigation }) {
     <Text style={styles.actionText}>Host Dashboard</Text>
     <Text style={styles.actionArrow}>›</Text>
   </TouchableOpacity>
-)}
+)}<TouchableOpacity
+  style={styles.actionBtn}
+  onPress={() => navigation.navigate('Safety')}>
+  <Text style={styles.actionIcon}>🛡️</Text>
+  <Text style={styles.actionText}>Safety & Support</Text>
+  <Text style={styles.actionArrow}>›</Text>
+</TouchableOpacity>
           </View>
         )}
 

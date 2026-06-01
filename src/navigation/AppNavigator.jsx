@@ -21,7 +21,7 @@ import SearchScreen from '../screens/SearchScreen';
 import CheckoutScreen from '../screens/CheckoutScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import HostDashboardScreen from '../screens/HostDashboardScreen';
-
+import SafetyScreen from '../screens/SafetyScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -120,6 +120,7 @@ export default function AppNavigator() {
       <Stack.Screen name="Checkout" component={CheckoutScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="HostDashboard" component={HostDashboardScreen} />
+      <Stack.Screen name="Safety" component={SafetyScreen} />
     </Stack.Navigator>
   );
 }
