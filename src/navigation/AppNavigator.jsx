@@ -20,6 +20,7 @@ import ChatScreen from '../screens/ChatScreen';
 import SearchScreen from '../screens/SearchScreen';
 import CheckoutScreen from '../screens/CheckoutScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
+import HostDashboardScreen from '../screens/HostDashboardScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -118,6 +119,7 @@ export default function AppNavigator() {
       <Stack.Screen name="Search" component={SearchScreen} />
       <Stack.Screen name="Checkout" component={CheckoutScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
+      <Stack.Screen name="HostDashboard" component={HostDashboardScreen} />
     </Stack.Navigator>
   );
 }
