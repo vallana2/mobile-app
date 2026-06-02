@@ -111,34 +111,22 @@ export default function ListingDetailScreen({ route, navigation }) {
           onPress={() => navigation.navigate('Reviews', { listingId: id })}>
           <Text style={styles.reviewsBtnText}>💬 See Reviews</Text>
         </TouchableOpacity>
-        <TouchableOpacity
+      <TouchableOpacity
   style={styles.messageBtn}
   onPress={async () => {
-    const convId = `${user?.id}_${listing.hostId || listing.host?.id}_${listing.id}`;
-    const conv = {
-      id: convId,
-      otherUserName: listing.host?.name || 'Host',
-      listingTitle: listing.title,
-      listingId: listing.id,
-      lastMessage: '',
-      lastTime: '',
-      unread: 0,
-    };
-    // Save conversation
-    const stored = await AsyncStorage.getItem('conversations');
-    const convs = stored ? JSON.parse(stored) : [];
-    const exists = convs.find(c => c.id === convId);
-    if (!exists) {
-      await AsyncStorage.setItem('conversations', JSON.stringify([conv, ...convs]));
-    }
-    navigation.navigate('Messages', {
-      screen: 'Chat',
-      params: {
-        conversationId: convId,
+    try {
+      const res = await api.post('/messages/conversations', {
+        hostId: listing.hostId || listing.host?.id,
+        listingId: listing.id,
+      });
+      navigation.navigate('Chat', {
+        conversationId: res.data.id,
         otherUserName: listing.host?.name || 'Host',
         listingTitle: listing.title,
-      }
-    });
+      });
+    } catch (err) {
+      Alert.alert('Error', 'Could not start conversation');
+    }
   }}>
   <Text style={styles.messageBtnText}>💬 Message Host</Text>
 </TouchableOpacity>

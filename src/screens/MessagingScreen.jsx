@@ -3,7 +3,7 @@ import {
   View, Text, FlatList, TouchableOpacity,
   StyleSheet, SafeAreaView, ActivityIndicator
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 
 export default function MessagingScreen({ navigation }) {
@@ -12,58 +12,89 @@ export default function MessagingScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', loadConversations);
+    const unsubscribe = navigation.addListener('focus', fetchConversations);
     return unsubscribe;
   }, [navigation]);
 
-  const loadConversations = async () => {
+  const fetchConversations = async () => {
     try {
       setLoading(true);
-      const stored = await AsyncStorage.getItem('conversations');
-      setConversations(stored ? JSON.parse(stored) : []);
+      const res = await api.get('/messages/conversations');
+      setConversations(res.data || []);
     } catch (err) {
-      console.log(err);
+      console.log('Conversations error:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.convCard}
-      onPress={() => navigation.navigate('Chat', {
-        conversationId: item.id,
-        otherUserName: item.otherUserName,
-        listingTitle: item.listingTitle,
-        listingId: item.listingId,
-      })}>
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>
-          {item.otherUserName?.charAt(0).toUpperCase() || '?'}
-        </Text>
-      </View>
-      <View style={styles.convInfo}>
-        <View style={styles.convRow}>
-          <Text style={styles.convName}>{item.otherUserName}</Text>
-          <Text style={styles.convTime}>{item.lastTime || ''}</Text>
+  const getOtherUser = (conv) => {
+    if (user?.role === 'GUEST') return conv.host;
+    return conv.guest;
+  };
+
+  const getLastMessage = (conv) => {
+    if (conv.messages && conv.messages.length > 0) {
+      return conv.messages[0].text;
+    }
+    return 'Tap to start chatting';
+  };
+
+  const getUnreadCount = (conv) => {
+    if (!conv.messages) return 0;
+    return conv.messages.filter(
+      m => !m.read && m.senderId !== user?.id
+    ).length;
+  };
+
+  const renderItem = ({ item }) => {
+    const otherUser = getOtherUser(item);
+    const lastMsg = getLastMessage(item);
+    const unread = getUnreadCount(item);
+
+    return (
+      <TouchableOpacity
+        style={styles.convCard}
+        onPress={() => navigation.navigate('Chat', {
+          conversationId: item.id,
+          otherUserName: otherUser?.name || 'User',
+          otherUserId: otherUser?.id,
+          listingTitle: item.listing?.title || 'Listing',
+        })}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>
+            {otherUser?.name?.charAt(0).toUpperCase() || '?'}
+          </Text>
         </View>
-        <Text style={styles.convListing} numberOfLines={1}>
-          🏠 {item.listingTitle}
-        </Text>
-        <Text style={[
-          styles.convLastMsg,
-          item.unread > 0 && styles.convLastMsgUnread
-        ]} numberOfLines={1}>
-          {item.lastMessage || 'Tap to start chatting'}
-        </Text>
-      </View>
-      {item.unread > 0 && (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{item.unread}</Text>
+        <View style={styles.convInfo}>
+          <View style={styles.convRow}>
+            <Text style={styles.convName}>{otherUser?.name || 'User'}</Text>
+            <Text style={styles.convTime}>
+              {item.updatedAt
+                ? new Date(item.updatedAt).toLocaleDateString('en-US', {
+                    month: 'short', day: 'numeric'
+                  })
+                : ''}
+            </Text>
+          </View>
+          <Text style={styles.convListing} numberOfLines={1}>
+            🏠 {item.listing?.title || 'Listing'}
+          </Text>
+          <Text style={[
+            styles.convLastMsg,
+            unread > 0 && styles.convLastMsgUnread
+          ]} numberOfLines={1}>
+            {lastMsg}
+          </Text>
         </View>
-      )}
-    </TouchableOpacity>
-  );
+        {unread > 0 && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{unread}</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -98,7 +129,7 @@ export default function MessagingScreen({ navigation }) {
           renderItem={renderItem}
           showsVerticalScrollIndicator={false}
           refreshing={loading}
-          onRefresh={loadConversations}
+          onRefresh={fetchConversations}
         />
       )}
     </SafeAreaView>
@@ -135,9 +166,7 @@ const styles = StyleSheet.create({
   },
   avatarText: { color: '#fff', fontWeight: '700', fontSize: 20 },
   convInfo: { flex: 1 },
-  convRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'
-  },
+  convRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   convName: { fontSize: 15, fontWeight: '700', color: '#222' },
   convTime: { fontSize: 12, color: '#aaa' },
   convListing: { fontSize: 12, color: '#FF385C', marginTop: 2, fontWeight: '500' },
