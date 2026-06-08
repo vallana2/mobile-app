@@ -22,10 +22,12 @@ import CheckoutScreen from '../screens/CheckoutScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import HostDashboardScreen from '../screens/HostDashboardScreen';
 import SafetyScreen from '../screens/SafetyScreen';
-
+import PaymentScreen from '../screens/PaymentScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
-
+import BookingReceiptScreen from '../screens/BookingReceiptScreen';
+import AvailabilityCalendarScreen from '../screens/AvailabilityCalendarScreen';
+import MapScreen from '../screens/MapScreen';
 function HomeTabs() {
   const insets = useSafeAreaInsets();
   return (
@@ -36,14 +38,18 @@ function HomeTabs() {
         tabBarInactiveTintColor: '#888',
         tabBarStyle: {
           paddingBottom: insets.bottom || 10,
-          height: 60 + (insets.bottom || 0),
-          backgroundColor: '#fff',
-          borderTopWidth: 1,
-          borderTopColor: '#f0f0f0',
-          elevation: 10,
-          shadowColor: '#000',
-          shadowOpacity: 0.08,
-          shadowRadius: 8,
+  height: 60 + (insets.bottom || 0),
+  backgroundColor: '#fff',
+  borderTopWidth: 1,
+  borderTopColor: '#f0f0f0',
+  elevation: 10,
+  shadowColor: '#000',
+  shadowOpacity: 0.08,
+  shadowRadius: 8,
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  right: 0,
         }
       }}
     >
@@ -121,6 +127,10 @@ export default function AppNavigator() {
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="HostDashboard" component={HostDashboardScreen} />
       <Stack.Screen name="Safety" component={SafetyScreen} />
+      <Stack.Screen name="Payment" component={PaymentScreen} />
+      <Stack.Screen name="BookingReceipt" component={BookingReceiptScreen} />
+      <Stack.Screen name="Calendar" component={AvailabilityCalendarScreen} />
+      <Stack.Screen name="Map" component={MapScreen} />
     </Stack.Navigator>
   );
 }

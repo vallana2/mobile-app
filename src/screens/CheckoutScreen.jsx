@@ -6,7 +6,6 @@ import {
 } from 'react-native';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
-import { saveNotification } from '../utils/notifications';
 
 const FALLBACKS = {
   APARTMENT: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80',
@@ -35,58 +34,23 @@ export default function CheckoutScreen({ route, navigation }) {
     month: 'short', day: 'numeric', year: 'numeric'
   });
 
-  const handleConfirm = async () => {
-    Alert.alert(
-      'Confirm Booking',
-      `Book ${listing.title} for ${nights} night${nights !== 1 ? 's' : ''}?\nTotal: $${total}`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm & Pay',
-          onPress: async () => {
-            try {
-              setLoading(true);
-
-              // ✅ Create booking in database
-              await api.post('/bookings', {
-                listingId: listing.id,
-                checkIn,
-                checkOut,
-              });
-
-              // ✅ Save notification
-              await saveNotification({
-                type: 'BOOKING_CONFIRMED',
-                title: 'Booking Confirmed! 🎉',
-                message: `Your booking at ${listing.title} is confirmed!\nCheck-in: ${formatDate(checkIn)}\nCheck-out: ${formatDate(checkOut)}\nTotal: $${total}`,
-                icon: '✅',
-              });
-
-              // ✅ Show success alert
-              Alert.alert(
-                '🎉 Booking Confirmed!',
-                `Your booking at ${listing.title} is confirmed!\n\nCheck-in: ${formatDate(checkIn)}\nCheck-out: ${formatDate(checkOut)}\nTotal: $${total}`,
-                [{
-                  text: 'View My Trips',
-                  onPress: () => navigation.navigate('Main', { screen: 'Trips' })
-                }]
-              );
-            } catch (err) {
-              Alert.alert('Booking Failed', err.response?.data?.message || 'Please try again.');
-            } finally {
-              setLoading(false);
-            }
-          }
-        }
-      ]
-    );
+  const handleConfirm = () => {
+    navigation.navigate('Payment', {
+      listing,
+      checkIn,
+      checkOut,
+      total,
+      bookingData: { checkIn, checkOut }
+    });
   };
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backBtn}>
           <Text style={styles.backText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Confirm & Pay</Text>
@@ -100,7 +64,9 @@ export default function CheckoutScreen({ route, navigation }) {
           <Image source={{ uri: photo }} style={styles.listingImage} />
           <View style={styles.listingInfo}>
             <Text style={styles.listingType}>{listing.type}</Text>
-            <Text style={styles.listingTitle} numberOfLines={2}>{listing.title}</Text>
+            <Text style={styles.listingTitle} numberOfLines={2}>
+              {listing.title}
+            </Text>
             <Text style={styles.listingLocation}>📍 {listing.location}</Text>
             {listing.rating && (
               <Text style={styles.listingRating}>⭐ {listing.rating}</Text>
@@ -204,7 +170,7 @@ export default function CheckoutScreen({ route, navigation }) {
         <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* Confirm Button */}
+      {/* Footer Button */}
       <View style={styles.footer}>
         <View style={styles.footerTotal}>
           <Text style={styles.footerTotalLabel}>Total</Text>

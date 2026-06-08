@@ -188,9 +188,13 @@ export default function HomeScreen({ navigation }) {
               ? <View style={styles.catUnderline} />
               : null}
           </TouchableOpacity>
+          
         ))}
       </ScrollView>
-
+<TouchableOpacity style={styles.mapBtn}
+  onPress={() => navigation.navigate('Map')}>
+  <Text style={styles.mapBtnText}>🗺️</Text>
+</TouchableOpacity>
       {/* Listings */}
       {loading ? (
         <View style={styles.centerBox}>
@@ -300,4 +304,6 @@ const styles = StyleSheet.create({
   cardGuests: { fontSize: 13, color: '#888', marginTop: 2 },
   cardPrice: { fontSize: 14, color: '#222', marginTop: 4 },
   cardPriceBold: { fontWeight: '700', fontSize: 15 },
+  mapBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' },
+mapBtnText: { fontSize: 18 },
 });

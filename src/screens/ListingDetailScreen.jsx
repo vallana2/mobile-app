@@ -1,24 +1,23 @@
-
-
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet,
-  ActivityIndicator, TouchableOpacity, Image
+  ActivityIndicator, TouchableOpacity, Image,
+  TextInput, Alert
 } from 'react-native';
 import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ListingDetailScreen({ route, navigation }) {
   const { id } = route.params;
   const { user } = useAuth();
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [booking, setBooking] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [checkIn, setCheckIn] = useState('');
+  const [checkOut, setCheckOut] = useState('');
 
-  useEffect(() => { fetchListing(); }, []);
+  useEffect(() => {
+    fetchListing();
+  }, []);
 
   const fetchListing = async () => {
     try {
@@ -31,89 +30,49 @@ export default function ListingDetailScreen({ route, navigation }) {
     }
   };
 
-  const handleBook = async () => {
-    setError(''); setSuccess('');
-    try {
-      setBooking(true);
-      await api.post('/bookings', {
-        listingId: id,
-        checkIn: '2026-06-01',
-        checkOut: '2026-06-07'
-      });
-      setSuccess('Booking created successfully!');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Booking failed');
-    } finally {
-      setBooking(false);
+  const getImage = (item) => {
+    if (item.photos && item.photos.length > 0) {
+      return { uri: item.photos[0].url };
     }
+    const fallbacks = {
+      APARTMENT: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80',
+      HOUSE: 'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=800&q=80',
+      VILLA: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&q=80',
+      CABIN: 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=800&q=80',
+    };
+    return { uri: fallbacks[item.type] || fallbacks.APARTMENT };
   };
-  const getImage = (listing) => {
-  if (listing.photos && listing.photos.length > 0) {
-    return { uri: listing.photos[0].url };
-  }
-  // Fallback to Unsplash based on listing type
-  const fallbacks = {
-    APARTMENT: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80',
-    HOUSE: 'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=800&q=80',
-    VILLA: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&q=80',
-    CABIN: 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=800&q=80',
+
+  const handleReserve = () => {
+    if (!checkIn || !checkOut) {
+      Alert.alert('Required', 'Please enter check-in and check-out dates');
+      return;
+    }
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+
+    if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) {
+      Alert.alert('Invalid date', 'Please use format YYYY-MM-DD\nExample: 2026-07-01');
+      return;
+    }
+    if (checkInDate <= today) {
+      Alert.alert('Invalid date', 'Check-in must be in the future');
+      return;
+    }
+    if (checkOutDate <= checkInDate) {
+      Alert.alert('Invalid date', 'Check-out must be after check-in');
+      return;
+    }
+    navigation.navigate('Checkout', {
+      listing,
+      checkIn,
+      checkOut,
+    });
   };
-  return { uri: fallbacks[listing.type] || fallbacks.APARTMENT };
-};
 
-  if (loading) return (
-    <ActivityIndicator size="large" color="#FF385C" style={{ marginTop: 100 }} />
-  );
-
-  if (!listing) return (
-    <Text style={{ textAlign: 'center', marginTop: 100 }}>Not found</Text>
-  );
-
-  return (
-    <ScrollView style={styles.container}>
-      <TouchableOpacity style={styles.back} onPress={() => navigation.goBack()}>
-        <Text style={styles.backText}>← Back</Text>
-      </TouchableOpacity>
-
-      {listing.photos && listing.photos[0] && listing.photos[0].url ? (
-        <Image source={{ uri: listing.photos[0].url }} style={styles.image} />
-      ) : (
-        <View style={styles.imagePlaceholder}>
-          <Text style={{ fontSize: 64 }}>🏠</Text>
-        </View>
-      )}
-
-      <View style={styles.body}>
-        <Text style={styles.title}>{listing.title}</Text>
-        <Text style={styles.location}>📍 {listing.location}</Text>
-        <Text style={styles.price}>${listing.pricePerNight} / night</Text>
-        <Text style={styles.type}>{listing.type} · Up to {listing.guests} guests</Text>
-        <Text style={styles.description}>{listing.description}</Text>
-
-        {listing.amenities && listing.amenities.length > 0 ? (
-          <View style={styles.amenities}>
-            <Text style={styles.sectionTitle}>Amenities</Text>
-            {listing.amenities.map((a, i) => (
-              <Text key={i} style={styles.amenity}>✓ {a}</Text>
-            ))}
-          </View>
-        ) : null}
-
-        {listing.host ? (
-          <View style={styles.hostBox}>
-            <Text style={styles.sectionTitle}>Host</Text>
-            <Text style={styles.hostName}>👤 {listing.host.name}</Text>
-          </View>
-        ) : null}
-
-        <TouchableOpacity
-          style={styles.reviewsBtn}
-          onPress={() => navigation.navigate('Reviews', { listingId: id })}>
-          <Text style={styles.reviewsBtnText}>💬 See Reviews</Text>
-        </TouchableOpacity>
-      <TouchableOpacity
-  style={styles.messageBtn}
-  onPress={async () => {
+  const handleMessageHost = async () => {
     try {
       const res = await api.post('/messages/conversations', {
         hostId: listing.hostId || listing.host?.id,
@@ -127,32 +86,135 @@ export default function ListingDetailScreen({ route, navigation }) {
     } catch (err) {
       Alert.alert('Error', 'Could not start conversation');
     }
-  }}>
-  <Text style={styles.messageBtnText}>💬 Message Host</Text>
-</TouchableOpacity>
+  };
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-        {success ? <Text style={styles.success}>{success}</Text> : null}
+  if (loading) return (
+    <ActivityIndicator
+      size="large"
+      color="#FF385C"
+      style={{ marginTop: 100 }}
+    />
+  );
 
-        {user && user.role === 'GUEST' ? (
+  if (!listing) return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text>Listing not found</Text>
+    </View>
+  );
+
+  const nights = checkIn && checkOut && new Date(checkOut) > new Date(checkIn)
+    ? Math.ceil((new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24))
+    : 0;
+
+  return (
+    <ScrollView style={styles.container}>
+
+      {/* Back Button */}
+      <TouchableOpacity style={styles.back} onPress={() => navigation.goBack()}>
+        <Text style={styles.backText}>← Back</Text>
+      </TouchableOpacity>
+
+      {/* Image */}
+      <Image source={getImage(listing)} style={styles.image} />
+
+      <View style={styles.body}>
+
+        {/* Title & Info */}
+        <Text style={styles.title}>{listing.title}</Text>
+        <Text style={styles.location}>📍 {listing.location}</Text>
+        <Text style={styles.price}>${listing.pricePerNight} / night</Text>
+        <Text style={styles.type}>
+          {listing.type} · Up to {listing.guests} guests
+        </Text>
+        <Text style={styles.description}>{listing.description}</Text>
+
+        {/* Amenities */}
+        {listing.amenities && listing.amenities.length > 0 && (
+          <View style={styles.amenities}>
+            <Text style={styles.sectionTitle}>Amenities</Text>
+            {listing.amenities.map((a, i) => (
+              <Text key={i} style={styles.amenity}>✓ {a}</Text>
+            ))}
+          </View>
+        )}
+
+        {/* Host */}
+        {listing.host && (
+          <View style={styles.hostBox}>
+            <Text style={styles.sectionTitle}>Host</Text>
+            <Text style={styles.hostName}>👤 {listing.host.name}</Text>
+          </View>
+        )}
+
+        {/* Reviews Button */}
+        <TouchableOpacity
+          style={styles.reviewsBtn}
+          onPress={() => navigation.navigate('Reviews', { listingId: id })}>
+          <Text style={styles.reviewsBtnText}>⭐ See Reviews</Text>
+        </TouchableOpacity>
+
+        {/* Message Host */}
+        {user && user.role === 'GUEST' && (
+          <TouchableOpacity
+            style={styles.messageBtn}
+            onPress={handleMessageHost}>
+            <Text style={styles.messageBtnText}>💬 Message Host</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Booking Section */}
+        {user && user.role === 'GUEST' && (
           <View style={styles.bookingBox}>
             <Text style={styles.sectionTitle}>Book this listing</Text>
-            <Text style={styles.dateLabel}>Check-in: June 1, 2026</Text>
-            <Text style={styles.dateLabel}>Check-out: June 7, 2026</Text>
-            <Text style={styles.totalPrice}>
-              Total: ${listing.pricePerNight * 6}
-            </Text>
+
+            {/* Date Inputs */}
+            <View style={styles.dateRow}>
+              <View style={styles.dateBox}>
+                <Text style={styles.dateLabel}>Check-in</Text>
+                <TextInput
+                  style={styles.dateInput}
+                  placeholder="2026-07-01"
+                  value={checkIn}
+                  onChangeText={setCheckIn}
+                  placeholderTextColor="#aaa"
+                />
+              </View>
+              <View style={styles.dateBox}>
+                <Text style={styles.dateLabel}>Check-out</Text>
+                <TextInput
+                  style={styles.dateInput}
+                  placeholder="2026-07-07"
+                  value={checkOut}
+                  onChangeText={setCheckOut}
+                  placeholderTextColor="#aaa"
+                />
+              </View>
+            </View>
+
+            {/* Price Preview */}
+            {nights > 0 && (
+              <View style={styles.pricePreview}>
+                <Text style={styles.pricePreviewText}>
+                  🌙 {nights} night{nights !== 1 ? 's' : ''} ·
+                  💰 Total: ${listing.pricePerNight * nights}
+                </Text>
+              </View>
+            )}
+
+            {/* Reserve Button */}
            <TouchableOpacity
-  style={styles.button}
-  onPress={() => navigation.navigate('Checkout', {
-    listing: listing,
-    checkIn: '2026-06-01',
-    checkOut: '2026-06-07',
-  })}>
-  <Text style={styles.buttonText}>Reserve</Text>
+  style={styles.calendarBtn}
+  onPress={() => navigation.navigate('Calendar', { listingId: id })}>
+  <Text style={styles.calendarBtnText}>📅 Select Dates & Book</Text>
+</TouchableOpacity>
+
+<TouchableOpacity style={styles.button} onPress={handleBook} disabled={booking}>
+  {booking ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Quick Book (Jun 1-7)</Text>}
 </TouchableOpacity>
           </View>
-        ) : null}
+        )}
+
+        <View style={{ height: 60 }} />
       </View>
     </ScrollView>
   );
@@ -163,10 +225,6 @@ const styles = StyleSheet.create({
   back: { padding: 16, paddingTop: 50 },
   backText: { color: '#FF385C', fontSize: 16 },
   image: { width: '100%', height: 280 },
-  imagePlaceholder: {
-    width: '100%', height: 280, backgroundColor: '#f0f0f0',
-    justifyContent: 'center', alignItems: 'center'
-  },
   body: { padding: 20 },
   title: { fontSize: 22, fontWeight: '700', color: '#222', marginBottom: 8 },
   location: { fontSize: 15, color: '#666', marginBottom: 4 },
@@ -179,27 +237,42 @@ const styles = StyleSheet.create({
   hostBox: { marginBottom: 20 },
   hostName: { fontSize: 15, color: '#444' },
   reviewsBtn: {
-    borderWidth: 1, borderColor: '#ddd', borderRadius: 12,
-    padding: 14, alignItems: 'center', marginBottom: 16
+    borderWidth: 1, borderColor: '#ddd',
+    borderRadius: 12, padding: 14,
+    alignItems: 'center', marginBottom: 12
   },
   reviewsBtnText: { color: '#222', fontWeight: '600', fontSize: 15 },
-  error: {
-    backgroundColor: '#fff0f0', color: '#cc0000', padding: 12,
-    borderRadius: 8, marginBottom: 12, textAlign: 'center'
-  },
-  success: {
-    backgroundColor: '#f0fff4', color: '#00aa44', padding: 12,
-    borderRadius: 8, marginBottom: 12, textAlign: 'center'
-  },
-  bookingBox: { backgroundColor: '#f8f8f8', borderRadius: 16, padding: 16, marginBottom: 40 },
-  dateLabel: { fontSize: 14, color: '#444', marginBottom: 4 },
-  totalPrice: { fontSize: 16, fontWeight: '700', color: '#222', marginBottom: 12, marginTop: 8 },
-  button: { backgroundColor: '#FF385C', borderRadius: 12, padding: 16, alignItems: 'center' },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   messageBtn: {
-  borderWidth: 1.5, borderColor: '#222',
-  borderRadius: 12, padding: 16,
-  alignItems: 'center', marginBottom: 12
+    borderWidth: 1.5, borderColor: '#222',
+    borderRadius: 12, padding: 14,
+    alignItems: 'center', marginBottom: 16
+  },
+  messageBtnText: { color: '#222', fontSize: 15, fontWeight: '600' },
+  bookingBox: {
+    backgroundColor: '#f8f8f8',
+    borderRadius: 16, padding: 16, marginBottom: 20
+  },
+  dateRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+  dateBox: { flex: 1 },
+  dateLabel: { fontSize: 12, fontWeight: '600', color: '#888', marginBottom: 6 },
+  dateInput: {
+    borderWidth: 1, borderColor: '#ddd',
+    borderRadius: 10, padding: 12,
+    fontSize: 14, color: '#222', backgroundColor: '#fff'
+  },
+  pricePreview: {
+    backgroundColor: '#fff0f3', borderRadius: 10,
+    padding: 10, marginBottom: 12, alignItems: 'center'
+  },
+  pricePreviewText: { fontSize: 14, color: '#FF385C', fontWeight: '600' },
+  button: {
+    backgroundColor: '#FF385C', borderRadius: 12,
+    padding: 16, alignItems: 'center'
+  },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  calendarBtn: {
+  borderWidth: 1, borderColor: '#FF385C', borderRadius: 12,
+  padding: 14, alignItems: 'center', marginBottom: 12
 },
-messageBtnText: { color: '#222', fontSize: 16, fontWeight: '600' },
+calendarBtnText: { color: '#FF385C', fontWeight: '600', fontSize: 15 },
 });

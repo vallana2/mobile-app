@@ -23,12 +23,13 @@ export function AuthProvider({ children }) {
   };
 
   const login = async (tokenValue, userValue) => {
+  if (tokenValue) {
     await AsyncStorage.setItem('token', tokenValue);
-    await AsyncStorage.setItem('user', JSON.stringify(userValue));
-    setToken(tokenValue);
-    setUser(userValue);
-  };
-
+  }
+  await AsyncStorage.setItem('user', JSON.stringify(userValue));
+  if (tokenValue) setToken(tokenValue);
+  setUser(userValue);
+};
   const logout = async () => {
     await AsyncStorage.clear();
     setToken(null);
